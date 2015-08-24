@@ -35,7 +35,6 @@ var BoardView = Backbone.View.extend({
     this.dim = 1200;
     this.svgIt();
     this.tileIt();
-
   },
 
   svgIt: function () {
@@ -53,7 +52,7 @@ var BoardView = Backbone.View.extend({
     d3.selectAll('rect').remove();
     d3.selectAll('text').remove();
     var redCount = blueCount = letterCount = doubleCheck = 0;
-    var lettersOnGrid = this.model.letterMatrix;
+    var letterMatrix = this.model.letterMatrix;
     var blueLetters = this.model.blueLetterMatrix;
     var redLetters = this.model.redLetterMatrix;
     for (var y = 0; y < 20; y++) {
@@ -67,7 +66,7 @@ var BoardView = Backbone.View.extend({
           'config_y': y,
           'config_x': x
         });
-        if (lettersOnGrid[y][x] !== 0) {
+        if (letterMatrix[y][x] !== 0) {
           letterCount++;
           //these two IF statements ensure lonely letters, in a column or row, will not be mistaken for invalid words
           if (this.model.matrix(x, y-1) === 0 && this.model.matrix(x, y+1) === 0) {
@@ -90,7 +89,7 @@ var BoardView = Backbone.View.extend({
             'x': x * this.spacing + this.spacing * .15,
             'y': y * this.spacing + this.spacing * .80,
             'font-size': this.spacing
-          }).text(lettersOnGrid[y][x]);
+          }).text(letterMatrix[y][x]);
           d3.select('svg').append('rect').attr({
             'x': x * this.spacing,
             'y': y * this.spacing,
@@ -140,8 +139,49 @@ var BoardView = Backbone.View.extend({
     //at the end of this long iteration, we check to see if the counts match,
     //which would imply that all words are valid 
     if (redCount + blueCount === letterCount * 2) {
-      window.alert('All valid. Good job!');
+      this.checkIfConnected(letterCount);
     }
+  },
+
+  //after all the words have been validated, this step makes sure they are all a part of one big body (not separate)
+  checkIfConnected: function (letters) {
+    var letterMatrix = [];
+    for (var i = 0; i < this.model.letterMatrix.length; i++) {
+      letterMatrix.push(this.model.letterMatrix[i].slice());
+    }
+
+    for (i = 0; i < 20; i++) {
+      for (var j = 0; j < 20; j++) {
+        if (letterMatrix[i][j] !== 0) {
+          var startPoint = [j, i];
+          i += 20;
+          j += 20;
+        }
+      }
+    }
+    var count = 0; 
+    var model = this.model;
+    function crawler (point) { 
+      var x = point[0], y = point[1];
+      if (letterMatrix[y] && !!letterMatrix[y][x]) {
+        count++;
+        letterMatrix[y][x] = 0;
+        crawler([x+1, y]);
+        crawler([x-1, y]);
+        crawler([x, y+1]);
+        crawler([x, y-1]);
+      }
+       console.log(x, y, count);
+    }
+    crawler(startPoint);
+    if (count === letters) {
+      this.completed();
+    }
+  },
+
+  //temporary 
+  completed: function () {
+    window.alert('Good job!');
   }
 
 });
