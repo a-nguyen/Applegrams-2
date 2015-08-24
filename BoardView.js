@@ -43,48 +43,29 @@ var BoardView = Backbone.View.extend({
                 'width': this.dim,
                 'height': this.dim,
               });
-
-    var space = this.spacing = this.dim / 20;
-    // for (var i = 0; i < 20; i++) {
-    //   d3.select('svg').append('line').attr({
-    //     'x1': space,
-    //     'x2': space,
-    //     'y1': 0,
-    //     'y2': this.dim,
-    //     'stroke-width': 2,
-    //     'stroke': 'black'
-    //   });
-    //   d3.select('svg').append('line').attr({
-    //     'x1': 0,
-    //     'x2': this.dim,
-    //     'y1': space,
-    //     'y2': space,
-    //     'stroke-width': 2,
-    //     'stroke': 'black'
-    //   });
-    //   space += this.spacing;
-    // }
+    this.spacing = this.dim / 20;
   },
 
   tileIt: function () {
     d3.selectAll('rect').remove();
     d3.selectAll('text').remove();
-    var greenCount = letterCount = 0;
+    var redCount = blueCount = letterCount = 0;
     var lettersOnGrid = this.model.letterMatrix;
-    var colors = this.model.colorMatrix;
+    var blueLetters = this.model.blueLetterMatrix;
+    var redLetters = this.model.redLetterMatrix;
     for (var y = 0; y < 20; y++) {
       for (var x = 0; x < 20; x++) {
-          d3.select('svg').append('rect').attr({
-            'x': x * this.spacing,
-            'y': y * this.spacing,
-            'height': this.spacing,
-            'width': this.spacing,
-            'fill': 'white',
-            'config_y': y,
-            'config_x': x
-          });
+        d3.select('svg').append('rect').attr({
+          'x': x * this.spacing,
+          'y': y * this.spacing,
+          'height': this.spacing,
+          'width': this.spacing,
+          'fill': 'white',
+          'config_y': y,
+          'config_x': x
+        });
         if (lettersOnGrid[y][x] !== 0) {
-          letterCount++
+          letterCount++;
           d3.select('svg').append('text').attr({
             'x': x * this.spacing + this.spacing * .05,
             'y': y * this.spacing + this.spacing * .80,
@@ -102,27 +83,41 @@ var BoardView = Backbone.View.extend({
             'config_y': y,
             'config_x': x
           });
-          if (colors[y][x] > 0) {
+          if (blueLetters[y][x] === 1) {
+            blueCount++;
             d3.select('svg').append('rect').attr({
               'x': x * this.spacing,
               'y': y * this.spacing,
               'height': this.spacing,
               'width': this.spacing,
-              'fill': 'green',
+              'fill': 'blue',
               'fill-opacity': .3,
               'rx': 15,
               'rc': 15,
               'config_y': y,
               'config_x': x
             });
-            greenCount++;
+          }
+          if (redLetters[y][x] === 1) {
+            redCount++;
+            d3.select('svg').append('rect').attr({
+              'x': x * this.spacing,
+              'y': y * this.spacing,
+              'height': this.spacing,
+              'width': this.spacing,
+              'stroke-width': 2,
+              'fill': 'red',
+              'fill-opacity': .3,
+              'rx': 15,
+              'rc': 15,
+              'config_y': y,
+              'config_x': x
+            });
           }
         }
       }
     }
-    if (letterCount === greenCount) {
-      window.alert('You finished!');
-    }
+    console.log(redCount, blueCount, letterCount)
   }
 
 });
