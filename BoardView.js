@@ -3,6 +3,8 @@ var BoardView = Backbone.View.extend({
   initialize: function () {
     this.render();
 
+    //this handles the clicking: first click on piece stores its data. The next click, if on another piece,
+    //switches the two; if the second click is made on an empty spot, the original piece is simple moved there.
     var X = Y = 0, config = this.model, that = this;
     $('rect').on('click', function (event) {
       if (X === 0 && $(event.currentTarget).attr('fill') !== 'white') {
@@ -14,7 +16,7 @@ var BoardView = Backbone.View.extend({
           var y = Number($(event.currentTarget).attr('config_y'));
           config.moveToEmptySpot(X, Y, x, y);
           X = Y = 0;
-          that.initialize();
+          that.initialize(); //updates view and ensures the function will continue listening (maybe there's a better way)
         } else {
           var x = Number($(event.currentTarget).attr('config_x'));
           var y = Number($(event.currentTarget).attr('config_y'));
@@ -25,7 +27,6 @@ var BoardView = Backbone.View.extend({
       }
     });
    
-
   },
 
   render: function () {
@@ -43,13 +44,15 @@ var BoardView = Backbone.View.extend({
                 'width': this.dim,
                 'height': this.dim,
               });
+    // it's a twenty-by-twenty grid
     this.spacing = this.dim / 20;
   },
 
+  //this function simply updates the View based off the state of the Model (the three matrices in BoardModel.js)
   tileIt: function () {
     d3.selectAll('rect').remove();
     d3.selectAll('text').remove();
-    var redCount = blueCount = letterCount = 0;
+    var redCount = blueCount = letterCount = doubleCheck = 0;
     var lettersOnGrid = this.model.letterMatrix;
     var blueLetters = this.model.blueLetterMatrix;
     var redLetters = this.model.redLetterMatrix;
@@ -66,8 +69,25 @@ var BoardView = Backbone.View.extend({
         });
         if (lettersOnGrid[y][x] !== 0) {
           letterCount++;
+          //these two IF statements ensure lonely letters, in a column or row, will not be mistaken for invalid words
+          if (this.model.matrix(x, y-1) === 0 && this.model.matrix(x, y+1) === 0) {
+            redLetters[y][x] = 1;
+            doubleCheck++;
+          }
+          if (this.model.matrix(x-1, y) === 0 && this.model.matrix(x+1, y) === 0) {
+            blueLetters[y][x] = 1;
+            doubleCheck++;
+          }
+          //this IF statement ensures that a letter completely on its own will stay yellow, and not be added to the total count of letters in valid places
+          if (doubleCheck === 2) {
+            redCount--;
+            blueCount--;
+            redLetters[y][x] = 0;
+            blueLetters[y][x] = 0;
+          }
+          doubleCheck = 0;
           d3.select('svg').append('text').attr({
-            'x': x * this.spacing + this.spacing * .05,
+            'x': x * this.spacing + this.spacing * .15,
             'y': y * this.spacing + this.spacing * .80,
             'font-size': this.spacing
           }).text(lettersOnGrid[y][x]);
@@ -117,7 +137,11 @@ var BoardView = Backbone.View.extend({
         }
       }
     }
-    console.log(redCount, blueCount, letterCount)
+    //at the end of this long iteration, we check to see if the counts match,
+    //which would imply that all words are valid 
+    if (redCount + blueCount === letterCount * 2) {
+      window.alert('All valid. Good job!');
+    }
   }
 
 });
